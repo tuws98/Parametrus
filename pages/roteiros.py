@@ -10,7 +10,7 @@ df = pd.DataFrame(
     [
        {"Código":"-","Componente": "-",
        "Posto Operativo": "-",
-       "Tempo": "-"},
+       "Tempo (h)": "-"},
    ]
 )
 
