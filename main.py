@@ -30,7 +30,7 @@ if 'estrutura_final' in st.session_state:
         with left:
             st.write('')
             custo_variavel = st.session_state.estrutura_final[st.session_state.estrutura_final.index == sku]['Custo Total'].sum()
-            st.metric('Custo Variável','R$ {:,.2f}'.format(float(custo_variavel)))
+            st.metric('Custo Variável','R$ {:,.2f}'.format(float(custo_variavel*quantidade)))
             st.write('')
             markup = st.slider('_Markup:_ porcentagem sobre o custo',0,400,0,format="%d%%")/100
         
@@ -40,7 +40,7 @@ if 'estrutura_final' in st.session_state:
                 custo_operacional = st.session_state.roteiro_final[st.session_state.roteiro_final.index == sku]['Custo Calculado'].sum()
             else:
                 custo_operacional = 0
-            st.metric('Custo Operacional','R$ {:,.2f}'.format(float(custo_operacional)))
+            st.metric('Custo Operacional','R$ {:,.2f}'.format(float(custo_operacional*quantidade)))
             st.write('')
             desconto = st.slider('Desconto Concedido',0,100,0,format="%d%%")/100
 
