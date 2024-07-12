@@ -1,20 +1,20 @@
 import streamlit as st
 import pandas as pd
-from dados import df_uny1
+from dados import df_uny2
 import time
 import numpy as np
 
 st.image('https://parametrus.com.br/wp-content/uploads/2021/07/logo-png-vertical.png',width = 100)
 st.title('Roteiros de Produção')
 
-postos = df_uny1['Posto Operativo'].value_counts().index
+postos = df_uny2['Posto Operativo'].value_counts().index
 
-df_uny1 = df_uny1.rename(columns = {'Custo' : 'Custo/h'})
+df_uny2 = df_uny2.rename(columns = {'Custo' : 'Custo/h'})
 
 produto = st.text_input('Insira o código do produto:')
 
-if "df" not in st.session_state:
-    st.session_state.df = pd.DataFrame(columns=[ "Componente", "Posto Operativo", 
+if "df2" not in st.session_state:
+    st.session_state.df2 = pd.DataFrame(columns=[ "Componente", "Posto Operativo", 
                                                 "Tempo(h)"])
 
 if produto:
@@ -29,15 +29,22 @@ if produto:
         df_novo = pd.DataFrame({"Componente":c,"Posto Operativo":p, "Tempo(h)":t}, index = [produto])
 
         if st.form_submit_button('Adicionar'):
-            st.session_state.df = pd.concat([st.session_state.df, df_novo], axis=0)
+            st.session_state.df2 = pd.concat([st.session_state.df2, df_novo], axis=0)
             st.info("Linha adicionada")    
 
     st.subheader('Roteiro em progresso:')
-    roteiro = st.data_editor(st.session_state.df)
+    roteiro = st.data_editor(st.session_state.df2)
 
     def save(produto,roteiro):
+        global roteiro_final
+
         st.session_state.produto1 = produto
         st.session_state.roteiro = roteiro
+        roteiro_final = pd.DataFrame(st.session_state.roteiro)
+        roteiro_final = pd.merge(roteiro_final,df_uny2,how='inner',on='Posto Operativo').set_index(roteiro_final.index)
+        roteiro_final['Custo Calculado'] = (roteiro_final['Custo/h'] * roteiro_final['Tempo(h)'])
+
+        st.session_state.roteiro_final = roteiro_final 
 
     col1,col2,col3,col4 = st.columns(4)
     salvar = col1.button('Salvar roteiro', on_click= save, args=(produto,roteiro))
@@ -51,10 +58,10 @@ if produto:
 
     def show_roteiro():
         st.subheader('Roteiro salvo:')
-        roteiro_final = pd.DataFrame(st.session_state.roteiro)
-        roteiro_final = pd.merge(roteiro_final,df_uny1,how='inner',on='Posto Operativo').set_index(roteiro_final.index)
-        roteiro_final['Custo Calculado'] = roteiro_final['Custo/h'] * roteiro_final['Tempo(h)']
-        st.write(roteiro_final)
+        view_roteiro = st.session_state.roteiro_final.copy(deep=True)
+        view_roteiro['Custo Calculado'] = (view_roteiro['Custo/h'] * view_roteiro['Tempo(h)']).apply(lambda x: "R$ {:.2f}".format(x))
+        view_roteiro['Custo/h'] = view_roteiro['Custo/h'].apply(lambda x: "R$ {:.2f}".format(x))
+        st.write(view_roteiro)
 
     if botao_roteiro:
         if 'roteiro' in st.session_state:

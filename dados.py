@@ -1,9 +1,6 @@
 import pandas as pd
 
-df_uny1 = pd.read_csv('postos_unylaser.csv',sep=';',decimal = ',')
+df_uny1 = pd.read_csv('insumos_unylaser.csv',sep=';',decimal = ',')
 
-print(df_uny1)
+df_uny2 = pd.read_csv('postos_unylaser.csv',sep=';',decimal = ',')
 
-postos = df_uny1['Posto Operativo'].value_counts().index
-
-print(postos)
