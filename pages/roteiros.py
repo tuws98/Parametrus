@@ -1,11 +1,16 @@
 import streamlit as st
+from st_pages import show_pages_from_config, add_page_title
 import pandas as pd
 from dados import df_uny2
 import time
 import numpy as np
+import io
+from dependencies import criar_roteiro, consulta_roteiro
 
+st.set_page_config(page_title="Roteiros de Produção")
 st.image('https://parametrus.com.br/wp-content/uploads/2021/07/logo-png-vertical.png',width = 100)
 st.title('Roteiros de Produção')
+
 
 postos = df_uny2['Posto Operativo'].value_counts().index
 
@@ -32,7 +37,7 @@ if produto:
             st.session_state.df2 = pd.concat([st.session_state.df2, df_novo], axis=0)
             st.info("Linha adicionada")    
 
-    st.subheader('Roteiro em progresso:')
+    st.subheader('Em progresso:')
     roteiro = st.data_editor(st.session_state.df2)
 
     def save(produto,roteiro):
@@ -57,11 +62,27 @@ if produto:
                 alert.empty()
 
     def show_roteiro():
+        st.write('')
         st.subheader('Roteiro salvo:')
         view_roteiro = st.session_state.roteiro_final.copy(deep=True)
         view_roteiro['Custo Calculado'] = (view_roteiro['Custo/h'] * view_roteiro['Tempo(h)']).apply(lambda x: "R$ {:.2f}".format(x))
         view_roteiro['Custo/h'] = view_roteiro['Custo/h'].apply(lambda x: "R$ {:.2f}".format(x))
+        view_roteiro = view_roteiro.rename_axis('Produto').reset_index()
         st.write(view_roteiro)
+
+        buffer = io.BytesIO()
+        if 'roteiro_final' in st.session_state:
+            with pd.ExcelWriter(buffer, engine= 'xlsxwriter') as writer:
+                st.session_state.roteiro_final.to_excel(writer, sheet_name= f'Roteiro {st.session_state.produto1}')
+
+                writer.close()
+
+                st.download_button(
+                    label = "Exportar roteiro",
+                    data = buffer.getvalue(),
+                    file_name = f'Roteiro {st.session_state.produto1}.xlsx',
+                    mime = "application/vnd.ms-excel"
+                )
 
     if botao_roteiro:
         if 'roteiro' in st.session_state:

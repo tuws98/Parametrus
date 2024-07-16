@@ -1,21 +1,20 @@
 import streamlit as st
 import pandas as pd
+from st_pages import show_pages_from_config, add_page_title
+import io
 
 df_sku = pd.Series(['-'])
 
-st.set_page_config(layout="wide")
+st.set_page_config(layout="wide",page_title="Precificador")
 st.image('https://parametrus.com.br/wp-content/uploads/2021/07/logo-png-vertical.png',width = 100)
 st.title('Precificador')
+show_pages_from_config()
 
 if 'estrutura_final' in st.session_state:
     df_sku = st.session_state.estrutura_final.index
-##else:
-  ##  st.warning('Cadastre a estrutura do produto')
 
 if 'roteiro_final' in st.session_state:
     df_sku = df_sku.append(st.session_state.roteiro_final.index)
-##else:
-   ## st.warning('Cadastre o roteiro do produto')
 
 col1,col2 = st.columns(2)
 sku = col1.selectbox('Produto',df_sku)
@@ -70,8 +69,6 @@ if 'estrutura_final' not in st.session_state:
 
 if 'roteiro_final' not in st.session_state:
     st.warning('Cadastre o roteiro de produto')
-
-
 
 
 

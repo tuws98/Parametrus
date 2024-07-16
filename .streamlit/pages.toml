@@ -1,0 +1,11 @@
+[[pages]]
+path = "main.py"
+name = "Precificação"
+
+[[pages]]
+path = "pages/estrutura.py"
+name = "Estrutura"
+
+[[pages]]
+path = "pages/roteiros.py"
+name = "Roteiros de Produção"
