@@ -1,0 +1,15 @@
+    with st.form(key="form_1", clear_on_submit= True):
+        col1,col2,col3 = st.columns(3)
+        componente = col1.text_input('Insira o código do componente:')
+        q_comp = col2.number_input('Quantidade')
+        existente = st.form_submit_button('Adicionar componente existente')
+    
+
+        if existente:
+        if componente in insumos:
+            df_componente = pd.DataFrame({"Item-pai":produto,"Item-filho": componente, "Quantidade":q_comp}, index = [produto])
+            st.session_state.df1 = pd.concat([st.session_state.df1, df_componente], axis=0)
+            st.success('Componente adicionado')
+            st.subheader('Em progresso:')
+        else:
+            st.warning('Componente não encontrado no banco de dados. Realize o cadastro.')

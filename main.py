@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from st_pages import show_pages_from_config, add_page_title
-import io
+
 
 df_sku = pd.Series(['-'])
 

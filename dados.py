@@ -4,3 +4,4 @@ df_uny1 = pd.read_csv('insumos_unylaser.csv',sep=';',decimal = ',')
 
 df_uny2 = pd.read_csv('postos_unylaser.csv',sep=';',decimal = ',')
 
+df_uny1 = df_uny1.rename(columns = {'Custo' : 'Custo Unitário'})

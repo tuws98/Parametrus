@@ -5,7 +5,7 @@ from dados import df_uny2
 import time
 import numpy as np
 import io
-from dependencies import criar_roteiro, consulta_roteiro
+from dependencies import consulta_roteiro
 
 st.set_page_config(page_title="Roteiros de Produção")
 st.image('https://parametrus.com.br/wp-content/uploads/2021/07/logo-png-vertical.png',width = 100)
