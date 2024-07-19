@@ -3,3 +3,5 @@ pandas
 numpy
 psycopg2
 python-dotenv
+duckdb
+sqlalchemy
