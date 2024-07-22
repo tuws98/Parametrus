@@ -49,7 +49,7 @@ def inicial():
     # Botões 
     col1,col2,col3,col4 = st.columns(4)
     cadastro = col1.button('Cadastrar novo componente',on_click= click_button)
-    estrutura_completa = col2.button('Visualizar estrutura completa')
+    estrutura_completa = col2.button('Estrutura completa')
     estrutura_recursiva = col3.button('Visualizar custos')
 
     if produto == "":
@@ -78,13 +78,21 @@ def main():
     if st.session_state.dummy == True:
         st.subheader("Criar componente:")
         with st.form(key="form_2", clear_on_submit= True):
-            col1,col2,col3 = st.columns(3)
-            c = col1.text_input('Item-pai')
-            col1,col2,col3 = st.columns(3)
-            mp = col1.selectbox('Item-filho',insumos)
-            q_filho = col2.number_input('Quantidade')
 
-            df_novo = pd.DataFrame({"Item-pai":c,"Item-filho": mp, "Quantidade":q_filho}, index = [produto])
+            col1,col2,col3 = st.columns(3)
+            c = col1.text_input('Item-pai',key='item_pai')
+            pai_existente = col2.selectbox('Procurar item existente',key= 'box_pai',index = None,options= insumos, placeholder='-')
+            col1,col2,col3 = st.columns(3)
+            mp = col1.text_input('Item-filho',key='item_filho')
+            filho_existente = col2.selectbox('Procurar item existente',key= 'box_filho',index = None,options= insumos,placeholder='-')
+            q_filho = col3.number_input('Quantidade')
+
+            if c == '':
+                c = pai_existente
+            if mp == '':
+                mp = filho_existente
+
+            df_novo = pd.DataFrame({"Item-pai": c,"Item-filho": mp, "Quantidade":q_filho}, index = [produto])
 
     # Adicionando dados ao DataFrame
             add = st.form_submit_button('Adicionar')
@@ -134,7 +142,7 @@ def show_estrutura():
 
 if __name__ == '__main__':
     inicial()
-    if state.dummy:
+    if state.dummy and state.produto1:
         main()
     if 'estrutura' in state and state.dummy == True:
         salvar = st.button('Salvar', on_click= save, args=(produto, state.estrutura))
