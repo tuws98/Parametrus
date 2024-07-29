@@ -6,3 +6,4 @@ python-dotenv
 duckdb
 sqlalchemy
 psycopg2-binary
+openpyxl

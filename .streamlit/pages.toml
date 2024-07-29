@@ -9,3 +9,7 @@ name = "Estrutura"
 [[pages]]
 path = "pages/roteiros.py"
 name = "Roteiros de Produção"
+
+[[pages]]
+path = "pages/edit.py"
+name = "Editar registros"

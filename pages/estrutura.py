@@ -4,9 +4,11 @@ import pandas as pd
 from dados import df_uny1
 import time
 import io
+from io import BytesIO
+from pyxlsb import open_workbook as open_xlsb
 from dependencies import consulta_estrutura, add_estrutura, recur
 
-state = st.session_state
+ss = st.session_state
 
 # Configurar página
 
@@ -29,129 +31,158 @@ st.markdown("""
 insumos = df_uny1['it-codigo'].value_counts().index
 
 # Criando DataFrame
-if "df1" not in st.session_state:
-    st.session_state.df1 = pd.DataFrame(columns=[ "Item-pai","Item-filho", "Quantidade"])
+if "df1" not in ss:
+    ss.df1 = pd.DataFrame(columns=[ "Item-pai","Item-filho", "Quantidade", "Unidade","Custo Unitário"])
 
+df2 = pd.DataFrame(columns=[ "Item-pai","Item-filho", "Quantidade", "Unidade"])
+df2 = df2.astype(dtype= { "Item-pai":'str',"Item-filho":'str', "Quantidade":'float64', "Unidade":'str'})
 
-# Tela inicial para digitar produto e componente
+# Função que converte DataFrame em Excel
+def convert_df(df):
+    output = BytesIO()
+    writer = pd.ExcelWriter(output, engine='xlsxwriter')
+    df.to_excel(writer, index=False, sheet_name='Sheet1')
+    workbook = writer.book
+    worksheet = writer.sheets['Sheet1']
+    format1 = workbook.add_format({'num_format': '@'}) 
+    worksheet.set_column('A:E', None, format1)  
+    writer.close()
+    processed_data = output.getvalue()
+    return processed_data
+
+df2_excel = convert_df(df2)
+
+# Tela inicial para digitar produto 
 def inicial():
     global produto, cadastro, estrutura_recursiva
     produto = st.text_input('Insira o código do produto:')
-    state.produto1 = produto  
+    ss.produto1 = produto  
 
     # Função pra fazer o botão de cadastro ficar ativo
-    if 'dummy' not in st.session_state:
-        st.session_state.dummy = False
+    if 'dummy' not in ss:
+        ss.dummy = False
             
     def click_button():
-        st.session_state.dummy = True
+        ss.dummy = True
 
     # Botões 
     col1,col2,col3,col4 = st.columns(4)
-    cadastro = col1.button('Cadastrar novo componente',on_click= click_button)
+    cadastro = col1.button('Cadastrar componente',on_click= click_button)
     estrutura_completa = col2.button('Estrutura completa')
-    estrutura_recursiva = col3.button('Visualizar custos')
+    estrutura_recursiva = col3.button('Custo insumos')
+    exportar_excel = col4.button('Exportar estrutura')
 
     if produto == "":
         st.warning('Defina produto')
 
     if estrutura_completa:
-            if 'produto1' in st.session_state:
-                st.subheader('Estrutura completa:')
-                consulta_estrutura(state.produto1)
-                st.session_state.dummy = False
-            else:
-                st.warning('Nenhuma estrutura foi cadastrada')
+        if 'produto1' in ss:
+            st.subheader('Estrutura completa:')
+            df_estrutura = consulta_estrutura(ss.produto1)
+            df_estrutura['custo_total'] = (df_estrutura['custo_unitario'] * df_estrutura['quantidade'])
+            df_estrutura.set_index('produto',inplace = True)
+            df_estrutura['custo_total'] = df_estrutura['custo_total'].apply(lambda x: "R$ {:.2f}".format(x))
+            df_estrutura['custo_unitario'] = df_estrutura['custo_unitario'].apply(lambda x: "R$ {:.2f}".format(x))
+            st.write(df_estrutura)
+            ss.dummy = False
+
+        else:
+            st.warning('Nenhuma estrutura foi cadastrada')
 
     if estrutura_recursiva:
         if 'produto1' in st.session_state:
             st.subheader('Custos por insumos:')
-            recur(state.produto1)
-            st.session_state.dummy = False
+            df_recursiva = recur(ss.produto1)
+            df3 = df_recursiva.copy()
+            df_recursiva['Custo Total'] = df_recursiva['Custo Total'].apply(lambda x: "R$ {:.2f}".format(x))
+            df_recursiva['Custo'] = df_recursiva['Custo'].apply(lambda x: "R$ {:.2f}".format(x))
+            df_recursiva.rename(columns = {'Custo' : 'Custo Unitário'},inplace = True)
+            df_recursiva = df_recursiva.reset_index(level= 'Insumo')
+            st.dataframe(df_recursiva)
+            st.markdown('Soma Custo Total : R$ {:.2f}'.format(df3['Custo Total'].sum()))
+            ss.dummy = False
+
         else:
             st.warning('Nenhuma estrutura foi cadastrada')
 
 
-# Criando formulário a ser preenchido
+# Área de cadastros
 def main():
     global estrutura
-    if st.session_state.dummy == True:
+    if ss.dummy == True:
+
         st.subheader("Criar componente:")
+
+        # Baixar arquivo modelo para preencher
+        st.download_button('Download Excel modelo',data = df2_excel,file_name = 'modelo_estrutura.xlsx')
+
+        # Formulário para preenchimento
         with st.form(key="form_2", clear_on_submit= True):
 
             col1,col2,col3 = st.columns(3)
             c = col1.text_input('Item-pai',key='item_pai')
             pai_existente = col2.selectbox('Procurar item existente',key= 'box_pai',index = None,options= insumos, placeholder='-')
-            col1,col2,col3 = st.columns(3)
             mp = col1.text_input('Item-filho',key='item_filho')
             filho_existente = col2.selectbox('Procurar item existente',key= 'box_filho',index = None,options= insumos,placeholder='-')
-            q_filho = col3.number_input('Quantidade')
+            q_filho = col1.number_input('Quantidade Item-filho')
+            unid = col2.text_input('Unidade Item-filho')
 
             if c == '':
                 c = pai_existente
             if mp == '':
                 mp = filho_existente
 
-            df_novo = pd.DataFrame({"Item-pai": c,"Item-filho": mp, "Quantidade":q_filho}, index = [produto])
+            df_novo = pd.DataFrame({"Item-pai": c,"Item-filho": mp, "Unidade" : unid,"Quantidade":q_filho}, index = [produto])
+            df_novo = pd.merge(df_novo,df_uny1,how='left',left_on = 'Item-filho',right_on='it-codigo').set_axis(df_novo.index)
+            df_novo = df_novo.drop('it-codigo',axis=1)
+
+            # Botão de upload do arquivo em Excel
+            df_preenchido = pd.DataFrame([])
+            uploaded_file = st.file_uploader('Upload',type = 'xlsx')
+            if uploaded_file:
+                xl_preenchido = pd.read_excel(uploaded_file)
+                df_preenchido = pd.DataFrame(xl_preenchido)
+                df_preenchido.index = [produto]
+                df_preenchido['Item-filho'] = df_preenchido['Item-filho'].astype('str')
+                df_preenchido['Item-pai'] = df_preenchido['Item-pai'].astype('str')
+                df_preenchido = pd.merge(df_preenchido,df_uny1,how='left',left_on = 'Item-filho',right_on='it-codigo').set_axis(df_preenchido.index)
+                df_preenchido = df_preenchido.drop('it-codigo',axis=1)
 
     # Adicionando dados ao DataFrame
             add = st.form_submit_button('Adicionar')
             if add:
-                st.session_state.df1 = pd.concat([st.session_state.df1, df_novo], axis=0)
+                ss.df1 = pd.concat([ss.df1, df_novo, df_preenchido], axis=0)
                 st.info("Linha adicionada")    
 
+
         st.subheader('Em progresso:')
-        state.estrutura = st.data_editor(st.session_state.df1)
+        ss.estrutura = st.data_editor(ss.df1,use_container_width=True, num_rows="dynamic", key= 'df_edit')
+        
 
 # Função que salva DataFrame na memória e insere no banco de dados
 def save(produto,df):
     global estrutura_final
-    state.produto1 = produto
+    ss.produto1 = produto
     estrutura_final = pd.DataFrame(df)
     estrutura_final = estrutura_final.rename_axis('Produto').reset_index()
-    estrutura_final.columns = ['produto','item_pai','item_filho','quantidade']
-    state.estrutura_final = estrutura_final
+    estrutura_final.columns = ['produto','item_pai','item_filho','quantidade', 'unidade','custo_unitario']
+    ss.estrutura_final = estrutura_final
 
-    add_estrutura(state.estrutura_final)
+    add_estrutura(ss.estrutura_final)
+    ss.df1 = pd.DataFrame(columns=[ "Item-pai","Item-filho", "Quantidade", "Unidade","Custo Unitário"])
 
-# Função que mostra estrutura e dá opção de baixar em excel
-def show_estrutura():
-    st.write('')
-    st.subheader('Estrutura salva:')
-    view_estrutura = st.session_state.estrutura_final.copy(deep=True)
-    view_estrutura['Custo Total'] = view_estrutura['Custo Total'].apply(lambda x: "R$ {:.2f}".format(x))
-    view_estrutura['Custo Unitário'] = view_estrutura['Custo Unitário'].apply(lambda x: "R$ {:.2f}".format(x))
-    view_estrutura = view_estrutura.rename_axis('Produto').reset_index()
-    st.write(view_estrutura)
-
-    buffer = io.BytesIO()
-    if 'estrutura_final' in st.session_state:
-        with pd.ExcelWriter(buffer, engine= 'xlsxwriter') as writer:
-            st.session_state.estrutura_final.to_excel(writer, sheet_name = f'Estrutura {st.session_state.produto1}')
-
-            writer.close()
-
-            st.download_button(
-                label = "Exportar estrutura",
-                data = buffer.getvalue(),
-                file_name = f'Estrutura {st.session_state.produto1}.xlsx',
-                mime = "application/vnd.ms-excel"
-            )
    
 # Função principal que inicializa a página
 
 if __name__ == '__main__':
     inicial()
-    if state.dummy and state.produto1:
+    if ss.dummy and ss.produto1:
         main()
-    if 'estrutura' in state and state.dummy == True:
-        salvar = st.button('Salvar', on_click= save, args=(produto, state.estrutura))
+    if 'estrutura' in ss and ss.dummy == True:
+        salvar = st.button('Salvar', on_click= save, args=(produto, ss.estrutura))
         if salvar:
-            alert = st.success(f'Estrutura do produto {st.session_state.produto1} foi salva')
+            alert = st.success(f'Estrutura do produto {ss.produto1} foi salva')
             time.sleep(1.5) 
             alert.empty()
         
 
-# estrutura_final = pd.merge(estrutura_final,df_uny1,how='inner',left_on = 'Item-filho',right_on='it-codigo').set_index(estrutura_final.index)
-# estrutura_final['Custo Total'] = (estrutura_final['Custo Unitário'] * estrutura_final['Quantidade'])
-# estrutura_final = estrutura_final.drop('it-codigo',axis=1)
