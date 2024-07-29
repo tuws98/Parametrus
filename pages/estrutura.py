@@ -1,5 +1,4 @@
 import streamlit as st
-from st_pages import show_pages_from_config, add_page_title
 import pandas as pd
 from dados import df_uny1
 import time

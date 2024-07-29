@@ -1,7 +1,7 @@
 import streamlit as st
 import plotly.express as px
 import pandas as pd
-from st_pages import show_pages_from_config, add_page_title
+from st_pages import show_pages_from_config
 from dependencies import consulta_estrutura, consulta_roteiro, produtos, recur
 
 
