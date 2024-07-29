@@ -7,3 +7,4 @@ duckdb
 sqlalchemy
 psycopg2-binary
 openpyxl
+plotly
