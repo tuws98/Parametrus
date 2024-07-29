@@ -138,6 +138,22 @@ def del_estrutura(produto):
             conn.execute(text(query))
             conn.commit()
 
+def del_roteiro(produto):
+     with instance_cursor() as cursor:
+        connection = psycopg2.connect(database= DATABASE, host = HOST, user= USERSERVER, password= PASSWORD, port= PORT)
+        conn_string = f"postgresql://{USERSERVER}:{PASSWORD}@{HOST}:{PORT}/{DATABASE}"
+        connection.autocommit = True
+
+        engine = create_engine(conn_string) 
+        with engine.connect() as conn:
+            query = f'''
+            DELETE
+            FROM roteiro
+            WHERE produto = '{produto}'
+            '''
+            conn.execute(text(query))
+            conn.commit()
+
 def produtos():
     with instance_cursor() as cursor:
         query = f'''
@@ -149,3 +165,45 @@ def produtos():
         df1 = pd.DataFrame(request, columns= ['produto'])
         lista_produtos = df1['produto']
         return lista_produtos
+    
+def consulta_postos():
+    with instance_cursor() as cursor:
+        query = f'''
+        SELECT *
+        FROM postos
+        '''
+        cursor.execute(query,)
+        request = cursor.fetchall()
+        df1 = pd.DataFrame(request, columns= ['Posto Operativo', 'Custo/h'])
+        return df1
+
+def add_postos(df):
+    connection = psycopg2.connect(database= DATABASE, host = HOST, user= USERSERVER, password= PASSWORD, port= PORT)
+    conn_string = f"postgresql://{USERSERVER}:{PASSWORD}@{HOST}:{PORT}/{DATABASE}"
+    connection.autocommit = True
+
+    db = create_engine(conn_string) 
+    conn = db.connect()
+    cursor = connection.cursor()
+
+    df.to_sql('postos', con= conn, if_exists='append', index=False)
+    query = ''' SELECT * FROM postos'''
+
+    cursor.execute(query)
+    connection.commit()
+    connection.close()
+
+def del_postos():
+     with instance_cursor() as cursor:
+        connection = psycopg2.connect(database= DATABASE, host = HOST, user= USERSERVER, password= PASSWORD, port= PORT)
+        conn_string = f"postgresql://{USERSERVER}:{PASSWORD}@{HOST}:{PORT}/{DATABASE}"
+        connection.autocommit = True
+
+        engine = create_engine(conn_string) 
+        with engine.connect() as conn:
+            query = f'''
+            DELETE
+            FROM postos
+            '''
+            conn.execute(text(query))
+            conn.commit()

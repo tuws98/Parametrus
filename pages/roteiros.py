@@ -32,7 +32,8 @@ postos = df_uny2['Posto Operativo'].value_counts().index
 # Componentes cadastrados na estrutura do produto
 if 'produto1' in ss:
     estrutura = consulta_estrutura(ss.produto1)
-    comp_estrutura = pd.concat([estrutura['item_pai'], estrutura['item_filho']],axis=1)
+    comp_estrutura = pd.concat([estrutura['item_pai'], estrutura['item_filho']],axis=0)
+    comp_estrutura.drop_duplicates(keep= 'first', inplace= True)
 
 
 # Criando DataFrame
@@ -82,11 +83,13 @@ def inicial():
         if 'produto1' in ss:
             st.subheader('Roteiro completo:')
             df_roteiro = consulta_roteiro(ss.produto1)
-            df_roteiro = pd.DataFrame(df_roteiro,columns= ['Produto','Componente', 'Posto Operativo', 'Serviço', 'Tempo (h)', 'Custo/h'])
-            df_roteiro['Custo Total'] = df_roteiro['Tempo (h)'] * df_roteiro['Custo/h']
+            df_roteiro.fillna(0,inplace= True)
+            df_roteiro = pd.DataFrame(df_roteiro)
+            df_roteiro['Custo Total'] = df_roteiro['tempo'] * df_roteiro['custo_h']
             df4 = df_roteiro.copy()
             df_roteiro['Custo Total'] = df_roteiro['Custo Total'].apply(lambda x: "R$ {:.2f}".format(x))
-            df_roteiro['Custo/h'] = df_roteiro['Custo/h'].apply(lambda x: "R$ {:.2f}".format(x))
+            df_roteiro['custo_h'] = df_roteiro['custo_h'].apply(lambda x: "R$ {:.2f}".format(x))
+            df_roteiro.rename(columns={'produto':'Produto','componente': 'Componente','posto_operativo':'Posto Operativo','servico':'Serviço','tempo':'Tempo (h)','custo_h':'Custo/h'},inplace= True)
             st.write(df_roteiro)
             st.write('Soma Custo Operacional: R$ {:.2f}'.format(df4['Custo Total'].sum()))
             ss.dummy = False

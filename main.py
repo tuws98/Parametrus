@@ -1,7 +1,7 @@
 import streamlit as st
 import plotly.express as px
 import pandas as pd
-# from st_pages import show_pages_from_config
+from st_pages import show_pages_from_config
 from dependencies import consulta_estrutura, consulta_roteiro, produtos, recur
 
 
@@ -10,7 +10,7 @@ df_sku = pd.Series(['-'])
 st.set_page_config(layout="wide",page_title="Precificador")
 st.image('https://parametrus.com.br/wp-content/uploads/2021/07/logo-png-vertical.png',width = 100)
 st.title('Precificador')
-# show_pages_from_config()
+show_pages_from_config()
 ss = st.session_state
 
 df_sku = produtos()

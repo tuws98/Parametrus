@@ -141,9 +141,10 @@ def main():
             if uploaded_file:
                 xl_preenchido = pd.read_excel(uploaded_file)
                 df_preenchido = pd.DataFrame(xl_preenchido)
-                df_preenchido.index = [produto]
-                df_preenchido['Item-filho'] = df_preenchido['Item-filho'].astype('str')
-                df_preenchido['Item-pai'] = df_preenchido['Item-pai'].astype('str')
+                produto_index = pd.Series([produto] * len(df_preenchido))
+                df_preenchido.index = produto_index
+                df_preenchido['Quantidade'] = df_preenchido['Quantidade'].astype(str)
+                df_preenchido['Quantidade'] = df_preenchido['Quantidade'].str.replace(',', '.').astype(float)
                 df_preenchido = pd.merge(df_preenchido,df_uny1,how='left',left_on = 'Item-filho',right_on='it-codigo').set_axis(df_preenchido.index)
                 df_preenchido = df_preenchido.drop('it-codigo',axis=1)
 
@@ -151,6 +152,7 @@ def main():
             add = st.form_submit_button('Adicionar')
             if add:
                 ss.df1 = pd.concat([ss.df1, df_novo, df_preenchido], axis=0)
+                ss.df1.fillna(0,inplace= True)
                 st.info("Linha adicionada")    
 
 
